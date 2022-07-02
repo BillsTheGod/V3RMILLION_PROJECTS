@@ -1,8 +1,3 @@
--- made by BillsTheGod
-if _G.OpenAI then return end;
-
-_G.OpenAI = true;
-
 repeat wait() until game:IsLoaded();
 
 -- // SETTINGS \\ --
@@ -18,6 +13,10 @@ _G.WHITELISTED = {
 };
 
 -- // DO NOT CHANGE BELOW \\ --
+
+if _G.OpenAI or SECRET_KEY == "secret key here" then return end;
+
+_G.OpenAI = true;
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
 local HttpService = game:GetService("HttpService");
