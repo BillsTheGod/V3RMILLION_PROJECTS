@@ -1,9 +1,10 @@
+
 repeat wait() until game:IsLoaded();
 
 -- // SETTINGS \\ --
 
 local SECRET_KEY = "secret key here"; --https://beta.openai.com/account/api-keys
-local CLOSE_RANGE_ONLY = false;
+local CLOSE_RANGE_ONLY = true;
 
 _G.MESSAGE_SETTINGS = {
 	["MINIMUM_CHARACTERS"] = 15,
@@ -30,6 +31,7 @@ local Players = game:GetService("Players");
 local HttpService = game:GetService("HttpService");
 local LocalPlayer = Players.LocalPlayer;
 local SayMessageRequest = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest");
+local OnMessageDoneFiltering = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("OnMessageDoneFiltering");
 local Debounce = false;
 
 local function MakeRequest(Prompt)
@@ -53,49 +55,38 @@ local function MakeRequest(Prompt)
 	});
 end
 
-local function ConnectFunction(Instance)
-	Instance.Chatted:Connect(function(Message)
-		local Character = Instance.Character;
+OnMessageDoneFiltering.OnClientEvent:Connect(function(Table)
+	local Message, Instance = Table.Message, Players:FindFirstChild(Table.FromSpeaker);
+	local Character = Instance and Instance.Character;
+	
+	if Instance == LocalPlayer or string.match(Message, "#") or not Character or not Character:FindFirstChild("Head") or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return end;
+	if Debounce or #Message < _G.MESSAGE_SETTINGS["MINIMUM_CHARACTERS"] or #Message > _G.MESSAGE_SETTINGS["MAXIMUM_CHARACTERS"] then return end;
+	if CLOSE_RANGE_ONLY then if _G.BLACKLISTED[Instance.Name] or (Character.Head.Position - LocalPlayer.Character.Head.Position).Magnitude > _G.MESSAGE_SETTINGS["MAXIMUM_STUDS"] then return end elseif not _G.WHITELISTED[Instance.Name] then return end;
 
-		if not Character or not Character:FindFirstChild("Head") or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return end;
-		if Debounce or #Message < _G.MESSAGE_SETTINGS["MINIMUM_CHARACTERS"] or #Message > _G.MESSAGE_SETTINGS["MAXIMUM_CHARACTERS"] then return end;
-		if CLOSE_RANGE_ONLY then if _G.BLACKLISTED[Instance.Name] or (Character.Head.Position - LocalPlayer.Character.Head.Position).Magnitude > _G.MESSAGE_SETTINGS["MAXIMUM_STUDS"] then return end elseif not _G.WHITELISTED[Instance.Name] then return end;
+	Debounce = true;
 
-		Debounce = true;
+	local HttpRequest = MakeRequest("Human: " .. Message .. "\n\nAI:");
+	local Response = Instance.Name .. ": " .. string.gsub(string.sub(HttpService:JSONDecode(HttpRequest["Body"]).choices[1].text, 2), "[%p%c]", "");
 
-		local HttpRequest = MakeRequest("Human: " .. Message .. "\n\nAI:");
-		local Response = Instance.Name .. ": " .. string.gsub(string.sub(HttpService:JSONDecode(HttpRequest["Body"]).choices[1].text, 2), "[%p%c]", "");
-
-		if #Response < 128 then --200
-			SayMessageRequest:FireServer(Response, "All");
-			wait(5);
-			Debounce = false;
-		else
-			warn("Response (> 128): " .. Response);
-			if #Response - 128 < 128 then
-				SayMessageRequest:FireServer(string.sub(Response, 1, 128), "All");
-				delay(3, function()
-					SayMessageRequest:FireServer(string.sub(Response, 129), "All");
-					wait(5);
-					Debounce = false;
-				end)	
-			else
-				SayMessageRequest:FireServer("Sorry but the answer was too big, please try again.", "All");
-				wait(2.5);
+	if #Response < 128 then --200
+		SayMessageRequest:FireServer(Response, "All");
+		wait(5);
+		Debounce = false;
+	else
+		warn("Response (> 128): " .. Response);
+		if #Response - 128 < 128 then
+			SayMessageRequest:FireServer(string.sub(Response, 1, 128), "All");
+			delay(3, function()
+				SayMessageRequest:FireServer(string.sub(Response, 129), "All");
+				wait(5);
 				Debounce = false;
-			end
+			end)	
+		else
+			SayMessageRequest:FireServer("Sorry but the answer was too big, please try again.", "All");
+			wait(2.5);
+			Debounce = false;
 		end
-	end)
-end
-
-for i,v in pairs(Players:GetPlayers()) do
-	if v.Name ~= Players.LocalPlayer.Name then
-		ConnectFunction(v);
 	end
-end
-
-Players.PlayerAdded:Connect(function(Player)
-	ConnectFunction(Player);
 end)
 
 warn("Script has been executed with success.");
