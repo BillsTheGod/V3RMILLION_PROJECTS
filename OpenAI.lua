@@ -43,7 +43,7 @@ local function MakeRequest(Prompt)
 			["Authorization"] =  "Bearer " .. SECRET_KEY
 		},
 		Body = HttpService:JSONEncode({
-			model = "text-davinci-002",
+			model = "text-davinci-003",
 			prompt = Prompt,
 			temperature = 0.9,
   			max_tokens = 47, --150
@@ -62,18 +62,18 @@ OnMessageDoneFiltering.OnClientEvent:Connect(function(Table)
 	if Instance == LocalPlayer or string.match(Message, "#") or not Character or not Character:FindFirstChild("Head") or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return end;
 	if Debounce or #Message < _G.MESSAGE_SETTINGS["MINIMUM_CHARACTERS"] or #Message > _G.MESSAGE_SETTINGS["MAXIMUM_CHARACTERS"] then return end;
 	if CLOSE_RANGE_ONLY then if _G.BLACKLISTED[Instance.Name] or (Character.Head.Position - LocalPlayer.Character.Head.Position).Magnitude > _G.MESSAGE_SETTINGS["MAXIMUM_STUDS"] then return end elseif not _G.WHITELISTED[Instance.Name] then return end;
-
+	
 	Debounce = true;
 
 	local HttpRequest = MakeRequest("Human: " .. Message .. "\n\nAI:");
-	local Response = Instance.Name .. ": " .. string.gsub(string.sub(HttpService:JSONDecode(HttpRequest["Body"]).choices[1].text, 2), "[%p%c]", "");
+	local Response = Instance.Name .. ": " .. string.sub(HttpService:JSONDecode(HttpRequest["Body"]).choices[1].text, 2);
 
 	if #Response < 128 then --200
 		SayMessageRequest:FireServer(Response, "All");
 		wait(5);
 		Debounce = false;
 	else
-		warn("Response (> 128): " .. Response);
+		--warn("Response (> 128): " .. Response);
 		if #Response - 128 < 128 then
 			SayMessageRequest:FireServer(string.sub(Response, 1, 128), "All");
 			delay(3, function()
