@@ -1,1 +1,1 @@
-game:GetService("Players").LocalPlayer:Kick("Script is outdated as of 1/8, join the server to stay up-to-date: 6bqwPxExXA");
+loadstring(game:HttpGet(("https://raw.githubusercontent.com/BillsTheGod/V3RMILLION_PROJECTS/main/el%20jeleba's%20hub/Hub%20Loader.lua")))();
