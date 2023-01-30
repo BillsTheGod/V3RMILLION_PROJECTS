@@ -1,4 +1,3 @@
-
 repeat wait() until game:IsLoaded();
 
 -- // SETTINGS \\ --
@@ -34,8 +33,10 @@ local SayMessageRequest = ReplicatedStorage:WaitForChild("DefaultChatSystemChatE
 local OnMessageDoneFiltering = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("OnMessageDoneFiltering");
 local Debounce = false;
 
+local RequestFunctiom = syn and syn.request or request;
+
 local function MakeRequest(Prompt)
-	return syn.request({
+	return RequestFunctiom({
 		Url = "https://api.openai.com/v1/completions", 
 		Method = "POST",
 		Headers = {
@@ -46,7 +47,7 @@ local function MakeRequest(Prompt)
 			model = "text-davinci-003",
 			prompt = Prompt,
 			temperature = 0.9,
-  			max_tokens = 47, --150
+  			max_tokens = 45, --150
   			top_p = 1,
   			frequency_penalty = 0.0,
   			presence_penalty = 0.6,
